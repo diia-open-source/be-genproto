@@ -1,0 +1,69 @@
+{
+    "name": "@diia-inhouse/genproto",
+    "version": "1.10.0",
+    "description": "JS codegen from proto with imports from @diia-inhouse/types",
+    "bin": {
+        "genproto": "./dist/genproto.js"
+    },
+    "repository": "https://github.com/diia-open-source/be-genproto.git",
+    "scripts": {
+        "prebuild": "rimraf dist",
+        "build": "tsc",
+        "semantic-release": "semantic-release",
+        "lint": "eslint --ext .ts . && prettier --check .",
+        "lint-fix": "eslint --ext .ts --fix && prettier --write .",
+        "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
+        "prepare": "npm run build",
+        "find-circulars": "madge --circular --extensions ts ./"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "author": "Diia",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "dependencies": {
+        "glob": "10.3.10",
+        "lookpath": "1.2.2",
+        "ts-proto": "1.164.0",
+        "yargs": "17.7.2"
+    },
+    "bundledDependencies": [
+        "ts-proto"
+    ],
+    "devDependencies": {
+        "@diia-inhouse/configs": "^1.27.1",
+        "@diia-inhouse/eslint-config": "^3.5.0",
+        "@types/node": "20.9.0",
+        "madge": "6.1.0",
+        "lockfile-lint": "4.13.1"
+    },
+    "eslintConfig": {
+        "extends": "@diia-inhouse/eslint-config",
+        "overrides": [
+            {
+                "files": [
+                    "*.ts"
+                ],
+                "parserOptions": {
+                    "project": [
+                        "./tsconfig.json",
+                        "./tests/tsconfig.json"
+                    ]
+                }
+            }
+        ]
+    },
+    "release": {
+        "extends": "@diia-inhouse/configs/dist/semantic-release/package",
+        "branches": [
+            "main"
+        ]
+    },
+    "commitlint": {
+        "extends": "@diia-inhouse/configs/dist/commitlint"
+    },
+    "prettier": "@diia-inhouse/eslint-config/prettier",
+    "madge": {
+        "tsConfig": "./tsconfig.json"
+    }
+}
