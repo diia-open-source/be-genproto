@@ -26,7 +26,7 @@ This repository contains the package with common tools for generating grpc servi
 Example:
 
 ```
-git clone https://github.com/diia-open-source/genproto.git
+git clone https://github.com/diia-open-source/be-genproto.git genproto
 ```
 
 ---

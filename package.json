@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "1.10.0",
+    "version": "1.10.1",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
