@@ -33,10 +33,11 @@ export default class TsCommandBuilder extends CommandBuilder {
                 break
         }
 
+        const npmRoot = execSync("npm root").toString().trim();
         const command = [
             'protoc',
             '--experimental_allow_proto3_optional',
-            '--plugin=$(npm root)/.bin/protoc-gen-ts_proto',
+            `--plugin=${npmRoot}/.bin/protoc-gen-ts_proto` + (process.platform === "win32" ? '.cmd' : ''),
             '--ts_proto_opt=useSnakeTypeName=false',
             '--ts_proto_opt=unrecognizedEnum=false',
             '--ts_proto_opt=stringEnums=true',
