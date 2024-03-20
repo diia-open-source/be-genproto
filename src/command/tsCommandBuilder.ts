@@ -1,7 +1,30 @@
 import { execSync } from 'child_process'
 import fs from 'fs'
+import path from 'path'
+
+import { glob } from 'glob'
 
 import { CommandBuilder, Platform } from './index'
+
+type Args = { cwd?: string }
+
+export const resolveTsProtoPluginPath = async ({ cwd }: Args = {}): Promise<string> => {
+    // find first parent folder that contains .git folder and package.json
+    let folder = cwd ?? process.cwd()
+    while (!fs.existsSync(path.join(folder, '.git')) || !fs.existsSync(path.join(folder, 'package.json'))) {
+        folder = folder.split(path.sep).slice(0, -1).join(path.sep)
+    }
+
+    // find `.bin/protoc-gen-ts_proto` file by glob pattern
+    const found = await glob(`**/node_modules/.bin/protoc-gen-ts_proto`, { cwd: folder })
+    const pluginPath = found.length > 0 ? found[0] : '$(npm root)/.bin/protoc-gen-ts_proto'
+
+    if (!fs.existsSync(pluginPath)) {
+        throw new Error(`Unable to find protoc-gen-ts_proto plugin by path ${pluginPath} inside ${folder} folder.`)
+    }
+
+    return path.resolve(pluginPath)
+}
 
 export default class TsCommandBuilder extends CommandBuilder {
     async protocCommand(): Promise<string[]> {
@@ -33,10 +56,12 @@ export default class TsCommandBuilder extends CommandBuilder {
                 break
         }
 
+        const pluginPath = await resolveTsProtoPluginPath()
+
         const command = [
             'protoc',
             '--experimental_allow_proto3_optional',
-            '--plugin=$(npm root)/.bin/protoc-gen-ts_proto',
+            `--plugin=${pluginPath}`,
             '--ts_proto_opt=useSnakeTypeName=false',
             '--ts_proto_opt=unrecognizedEnum=false',
             '--ts_proto_opt=stringEnums=true',
