@@ -7,6 +7,6 @@
         "baseUrl": ".",
         "strict": true
     },
-    "include": ["src/genproto.ts"],
+    "include": ["./**/*"],
     "exclude": ["node_modules"]
 }
