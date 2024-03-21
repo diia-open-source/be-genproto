@@ -72,7 +72,7 @@ async function main(): Promise<void> {
     try {
         let commandLine = command.join(' ');
         if (process.platform === 'win32') {
-            const tempFile = os.tmpdir() + '\\genproto.cmd'
+            const tempFile = path.join(os.tmpdir(), 'genproto.cmd');
             fs.writeFileSync(tempFile, commandLine);
             commandLine = tempFile
         }
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
         logger.log(err.stack)
     } finally {
         if (process.platform === 'win32') {
-            const tempFile = os.tmpdir() + '\\genproto.cmd'
+            const tempFile = path.join(os.tmpdir(), 'genproto.cmd');
             fs.rmSync(tempFile);
         }
     }
