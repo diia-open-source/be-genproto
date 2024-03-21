@@ -47,7 +47,7 @@ export abstract class CommandBuilder {
                 return acc
             }
 
-            const splittedPath = value.split('/')
+            const splittedPath = value.split(/[\/\\]/)
             const idx = splittedPath.indexOf('node_modules')
             let packageName
             if (platform === Platform.java) {

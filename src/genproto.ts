@@ -4,6 +4,8 @@
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import process from 'process'
+import os from 'os'
 
 import { lookpath } from 'lookpath'
 import yargs from 'yargs'
@@ -68,8 +70,15 @@ async function main(): Promise<void> {
     logger.log(command.join(' '))
 
     try {
+        let commandLine = command.join(' ');
+        if (process.platform === 'win32') {
+            const tempFile = path.join(os.tmpdir(), 'genproto.cmd');
+            fs.writeFileSync(tempFile, commandLine);
+            commandLine = tempFile
+        }
+
         // ignore stdout but print stderr in exception handler
-        execSync(command.join(' '), { stdio: 'pipe' })
+        execSync(commandLine, { stdio: 'pipe' })
         if (options.indexToDirs.length) {
             logger.log('Start to generate index files...')
             for (const dir of options.indexToDirs) {
@@ -89,6 +98,11 @@ async function main(): Promise<void> {
 
         logger.log('Command failed: ', err.stderr?.toString())
         logger.log(err.stack)
+    } finally {
+        if (process.platform === 'win32') {
+            const tempFile = path.join(os.tmpdir(), 'genproto.cmd');
+            fs.rmSync(tempFile);
+        }
     }
 
     logger.log('Protoc command finished successfully')
