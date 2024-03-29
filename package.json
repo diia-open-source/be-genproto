@@ -35,8 +35,9 @@
         "@diia-inhouse/eslint-config": "^3.5.0",
         "@types/node": "20.9.0",
         "@types/yargs": "^17.0.32",
+        "lockfile-lint": "4.13.1",
         "madge": "6.1.0",
-        "lockfile-lint": "4.13.1"
+        "rimraf": "^5.0.5"
     },
     "eslintConfig": {
         "extends": "@diia-inhouse/eslint-config",
