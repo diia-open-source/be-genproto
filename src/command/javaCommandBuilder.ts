@@ -7,7 +7,7 @@ export default class JavaCommandBuilder extends CommandBuilder {
             '--experimental_allow_proto3_optional',
             `--java_out=${this.outputDir}`,
             '-I=./node_modules/@diia-inhouse/types/dist/proto/',
-            `-I ./proto ${await this.iPath()}`,
+            `-I ./${this.rootDir} ${await this.iPath()}`,
         ]
 
         this.logger.log('java client build')

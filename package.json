@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "1.10.1",
+    "version": "1.14.0",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -31,10 +31,9 @@
         "ts-proto"
     ],
     "devDependencies": {
-        "@diia-inhouse/configs": "^1.27.1",
-        "@diia-inhouse/eslint-config": "^3.5.0",
+        "@diia-inhouse/configs": "1.31.1",
+        "@diia-inhouse/eslint-config": "5.1.0",
         "@types/node": "20.9.0",
-        "@types/yargs": "^17.0.32",
         "madge": "6.1.0",
         "lockfile-lint": "4.13.1"
     },
@@ -66,5 +65,6 @@
     "prettier": "@diia-inhouse/eslint-config/prettier",
     "madge": {
         "tsConfig": "./tsconfig.json"
-    }
+    },
+    "peerDependencies": null
 }

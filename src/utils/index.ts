@@ -1,8 +1,8 @@
-import { promises as fs } from 'fs'
-import path from 'path'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 
-export default class Utils {
-    static async generateIndexForDirectory(dir: string): Promise<void> {
+export default {
+    async generateIndexForDirectory(dir: string): Promise<void> {
         const items = await fs.readdir(dir, { withFileTypes: true })
         const exports: string[] = []
 
@@ -10,11 +10,11 @@ export default class Utils {
             const resPath = path.resolve(dir, item.name)
             if (item.isDirectory()) {
                 await this.generateIndexForDirectory(resPath)
-                exports.push(`export * from './${item.name}';`)
+                exports.push(`export * from './${item.name}/index.js';`)
             } else if (item.isFile() && item.name.endsWith('.ts') && item.name !== 'index.ts') {
                 const fileNameWithoutExt = path.basename(item.name, '.ts')
 
-                exports.push(`export * from './${fileNameWithoutExt}';`)
+                exports.push(`export * from './${fileNameWithoutExt}.js';`)
             }
         }
 
@@ -23,5 +23,5 @@ export default class Utils {
 
             await fs.writeFile(indexFilePath, exports.join('\n\n') + '\n')
         }
-    }
+    },
 }

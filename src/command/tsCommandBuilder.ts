@@ -1,5 +1,5 @@
-import { execSync } from 'child_process'
-import fs from 'fs'
+import { execSync } from 'node:child_process'
+import fs from 'node:fs'
 
 import { CommandBuilder, Platform } from './index'
 
@@ -12,7 +12,7 @@ export default class TsCommandBuilder extends CommandBuilder {
         } else if (fs.existsSync('build.gradle')) {
             projectPlatform = Platform.java
         } else {
-            throw Error('Unable to identify platform type no package.json or build.gradle found')
+            throw new Error('Unable to identify platform type no package.json or build.gradle found')
         }
 
         let typesProtoPath: string
@@ -20,17 +20,19 @@ export default class TsCommandBuilder extends CommandBuilder {
         let dependenciesPattern: string
 
         switch (projectPlatform) {
-            case Platform.java:
+            case Platform.java: {
                 typesProtoPath = './build/extracted-protos/main/'
                 typesSubPaths = ['build', 'extracted-protos', 'main']
                 dependenciesPattern = 'build/extracted-protos/main/**/*.proto'
                 execSync('./gradlew :extractProto', { stdio: 'pipe' })
                 break
-            case Platform.ts:
+            }
+            case Platform.ts: {
                 typesProtoPath = './node_modules/@diia-inhouse/types/dist/proto/'
                 typesSubPaths = ['dist', 'proto', '@diia-inhouse', 'types']
                 dependenciesPattern = 'node_modules/@diia-inhouse/**/proto/**/*.proto'
                 break
+            }
         }
 
         const command = [
@@ -42,26 +44,22 @@ export default class TsCommandBuilder extends CommandBuilder {
             '--ts_proto_opt=stringEnums=true',
             '--ts_proto_opt=exportCommonSymbols=false',
             '--ts_proto_opt=env=node',
-            '--ts_proto_opt=esModuleInterop=false',
+            '--ts_proto_opt=esModuleInterop=true',
+            '--ts_proto_opt=importSuffix=.js',
             '--ts_proto_opt=snakeToCamel=false',
             '--ts_proto_opt=useMongoObjectId=true',
             '--ts_proto_opt=useDate=true',
             '--ts_proto_opt=useExactTypes=false',
             `--ts_proto_out=${this.outputDir}`,
-            `-I ./proto ${await this.iPath()}`,
+            `-I ./${this.rootDir} ${await this.iPath()}`,
         ]
 
         command.push(`-I=${typesProtoPath}`)
 
         if (this.generateClient) {
-            // command.push('--ts_proto_opt=outputClientImpl=grpc-web')
             command.push('--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions')
-            // command.push('--ts_proto_opt=outputJsonMethods=false')
-            // command.push('--ts_proto_opt=outputEncodeMethods=false')
         } else {
-            command.push('--ts_proto_opt=outputServices=false')
-            command.push('--ts_proto_opt=outputClientImpl=false')
-            // command.push('--ts_proto_opt=onlyTypes=true')
+            command.push('--ts_proto_opt=outputServices=false', '--ts_proto_opt=outputClientImpl=false')
         }
 
         const protosMap = await this.externalImports(dependenciesPattern, typesSubPaths, projectPlatform)

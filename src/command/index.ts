@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 
 import { glob } from 'glob'
 
@@ -13,6 +13,7 @@ export abstract class CommandBuilder {
     constructor(
         protected readonly logger: Logger,
         protected readonly generateClient: boolean,
+        protected readonly rootDir: string,
         protected readonly outputDir: string,
     ) {}
 
@@ -20,7 +21,7 @@ export abstract class CommandBuilder {
 
     protected async iPath(): Promise<string> {
         let iPath = ''
-        const protoFiles = await glob('proto/**/*.proto')
+        const protoFiles = await glob(`${this.rootDir}/**/*.proto`)
 
         if (protoFiles.length > 0) {
             iPath += ' ' + protoFiles.join(' ')
@@ -49,13 +50,7 @@ export abstract class CommandBuilder {
 
             const splittedPath = value.split('/')
             const idx = splittedPath.indexOf('node_modules')
-            let packageName
-            if (platform === Platform.java) {
-                // todo implement java resolution packages
-                packageName = '@diia-inhouse/types'
-            } else {
-                packageName = `${splittedPath[idx + 1]}/${splittedPath[idx + 2]}`
-            }
+            const packageName = platform === Platform.java ? '@diia-inhouse/types' : `${splittedPath[idx + 1]}/${splittedPath[idx + 2]}`
 
             const filename = splittedPath
                 .slice(idx + 1)
