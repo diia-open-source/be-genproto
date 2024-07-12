@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "1.15.0",
+    "version": "2.0.0",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -24,8 +24,10 @@
     "dependencies": {
         "glob": "11.0.0",
         "lookpath": "1.2.2",
-        "ts-proto": "1.181.0",
         "yargs": "17.7.2"
+    },
+    "peerDependencies": {
+        "ts-proto": ">=1.181.0"
     },
     "devDependencies": {
         "@diia-inhouse/configs": "2.0.0",
@@ -35,7 +37,7 @@
         "lockfile-lint": "4.14.0",
         "madge": "7.0.0",
         "prettier": "3.3.2",
-        "rimraf": "6.0.0",
+        "rimraf": "6.0.1",
         "semantic-release": "24.0.0"
     },
     "eslintConfig": {
@@ -66,8 +68,5 @@
     "prettier": "@diia-inhouse/eslint-config/prettier",
     "madge": {
         "tsConfig": "./tsconfig.json"
-    },
-    "bundleDependencies": [
-        "ts-proto"
-    ]
+    }
 }
