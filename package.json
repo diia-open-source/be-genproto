@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "2.0.0",
+    "version": "2.0.2",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -30,7 +30,7 @@
         "ts-proto": ">=1.181.0"
     },
     "devDependencies": {
-        "@diia-inhouse/configs": "2.0.0",
+        "@diia-inhouse/configs": "2.2.0",
         "@diia-inhouse/eslint-config": "5.1.0",
         "@types/node": "20.14.10",
         "eslint": "8.57.0",
