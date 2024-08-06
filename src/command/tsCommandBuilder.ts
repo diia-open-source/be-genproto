@@ -69,7 +69,7 @@ export default class TsCommandBuilder extends CommandBuilder {
             }
         }
 
-        const pluginLocation = this.getProtoTsPluginLocation()
+        const pluginLocation = await this.getProtoTsPluginLocation()
 
         if (!pluginLocation) {
             throw new Error("Couldn't locate plugin in node modules. Are you sure that ts-proto is installed?")
