@@ -35,10 +35,22 @@ export abstract class CommandBuilder {
         subpaths: string[],
         platform: Platform,
     ): Promise<{ [key: string]: string[] }> {
-        const files: string[] = await glob(dependenciesPattern)
+        let files: string[] = await glob(dependenciesPattern)
 
         if (!files) {
             return {}
+        }
+
+        if (dependenciesPattern.includes('node_modules')) {
+            files = files.filter((file) => {
+                const pathParts = file.split('/')
+
+                if (pathParts.filter((part) => part === 'node_modules').length > 1) {
+                    return false
+                }
+
+                return true
+            })
         }
 
         return files.reduce?.<{ [key: string]: string[] }>((acc, value) => {
