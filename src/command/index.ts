@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 
 import { glob } from 'glob'
@@ -9,15 +10,19 @@ export enum Platform {
     java = 'java',
 }
 
+enum InhousePackages {
+    types = '@diia-inhouse/types',
+    designSystem = '@diia-inhouse/design-system',
+}
+
 export abstract class CommandBuilder {
     constructor(
         protected readonly logger: Logger,
         protected readonly generateClient: boolean,
         protected readonly rootDir: string,
         protected readonly outputDir: string,
+        protected readonly protoPaths: string[],
     ) {}
-
-    abstract protocCommand(): Promise<string[]>
 
     protected async iPath(): Promise<string> {
         let iPath = ''
@@ -60,9 +65,20 @@ export abstract class CommandBuilder {
                 return acc
             }
 
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            const contents = fs.readFileSync(value) // nosemgrep: eslint.detect-non-literal-fs-filename
+            if (!contents.includes('package ua.gov.diia')) {
+                return acc
+            }
+
+            let mappedPackage = InhousePackages.types
+            if (contents.includes('package ua.gov.diia.types.ds')) {
+                mappedPackage = InhousePackages.designSystem
+            }
+
             const splittedPath = value.split('/')
             const idx = splittedPath.indexOf('node_modules')
-            const packageName = platform === Platform.java ? '@diia-inhouse/types' : `${splittedPath[idx + 1]}/${splittedPath[idx + 2]}`
+            const packageName = platform === Platform.java ? mappedPackage : `${splittedPath[idx + 1]}/${splittedPath[idx + 2]}`
 
             const filename = splittedPath
                 .slice(idx + 1)
@@ -72,4 +88,6 @@ export abstract class CommandBuilder {
             return { ...acc, [packageName]: [filename, ...(acc[packageName] || [])] }
         }, {})
     }
+
+    abstract protocCommand(): Promise<string[]>
 }

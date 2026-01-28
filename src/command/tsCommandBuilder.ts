@@ -12,22 +12,13 @@ export default class TsCommandBuilder extends CommandBuilder {
         './node_modules/@diia-inhouse/genproto/node_modules/ts-proto/protoc-gen-ts_proto',
     ]
 
-    private async isFileExists(file: string): Promise<boolean> {
-        try {
-            await fs.access(file, fs.constants.F_OK)
-        } catch {
-            return false
-        }
-
-        return true
-    }
-
     async getProtoTsPluginLocation(): Promise<string | undefined> {
         const pluginLocations = []
 
         for (const location of this.tsPluginLocations) {
             try {
-                await fs.realpath(location)
+                // eslint-disable-next-line security/detect-non-literal-fs-filename
+                await fs.realpath(location) // nosemgrep: eslint.detect-non-literal-fs-filename
             } catch {
                 continue
             }
@@ -41,9 +32,13 @@ export default class TsCommandBuilder extends CommandBuilder {
     async protocCommand(): Promise<string[]> {
         let projectPlatform: Platform
 
-        if ((await this.isFileExists('package.json')) && !(await this.isFileExists('build.gradle'))) {
+        if (
+            (await this.isFileExists('package.json')) &&
+            !(await this.isFileExists('build.gradle')) &&
+            !(await this.isFileExists('build.gradle.kts'))
+        ) {
             projectPlatform = Platform.ts
-        } else if (await this.isFileExists('build.gradle')) {
+        } else if ((await this.isFileExists('build.gradle')) || (await this.isFileExists('build.gradle.kts'))) {
             projectPlatform = Platform.java
         } else {
             throw new Error('Unable to identify platform type no package.json or build.gradle found')
@@ -52,6 +47,7 @@ export default class TsCommandBuilder extends CommandBuilder {
         let typesProtoPath: string
         let typesSubPaths: string[]
         let dependenciesPattern: string
+        let designSystemProtoPath = ''
 
         switch (projectPlatform) {
             case Platform.java: {
@@ -63,7 +59,8 @@ export default class TsCommandBuilder extends CommandBuilder {
             }
             case Platform.ts: {
                 typesProtoPath = './node_modules/@diia-inhouse/types/dist/proto/'
-                typesSubPaths = ['dist', 'proto', '@diia-inhouse', 'types']
+                typesSubPaths = ['dist', 'proto', '@diia-inhouse', 'types', 'design-system']
+                designSystemProtoPath = './node_modules/@diia-inhouse/design-system/dist/proto'
                 dependenciesPattern = 'node_modules/@diia-inhouse/**/proto/**/*.proto'
                 break
             }
@@ -91,10 +88,17 @@ export default class TsCommandBuilder extends CommandBuilder {
             '--ts_proto_opt=useDate=true',
             '--ts_proto_opt=useExactTypes=false',
             `--ts_proto_out=${this.outputDir}`,
-            `-I ./${this.rootDir} ${await this.iPath()}`,
+            `--proto_path ./${this.rootDir}`,
+            `--proto_path ${typesProtoPath}`,
         ]
 
-        command.push(`-I=${typesProtoPath}`)
+        if (designSystemProtoPath.length > 0) {
+            command.push(`--proto_path ${designSystemProtoPath}`)
+        }
+
+        for (const protoPath in this.protoPaths) {
+            command.push(`--proto_path ${protoPath}`)
+        }
 
         if (this.generateClient) {
             command.push('--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions')
@@ -109,6 +113,19 @@ export default class TsCommandBuilder extends CommandBuilder {
             command.push(...subcommand)
         }
 
+        // Important, this should be the last param in argv array since it defines root file (strictly positional param)
+        command.push(await this.iPath())
+
         return command
+    }
+
+    private async isFileExists(file: string): Promise<boolean> {
+        try {
+            await fs.access(file, fs.constants.F_OK)
+        } catch {
+            return false
+        }
+
+        return true
     }
 }

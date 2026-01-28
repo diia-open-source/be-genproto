@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "2.0.8",
+    "version": "2.1.4",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -9,9 +9,10 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "tsc",
+        "build:watch": "tsc --watch",
         "semantic-release": "semantic-release",
-        "lint": "eslint --ext .ts . && prettier --check .",
-        "lint-fix": "eslint --ext .ts --fix && prettier --write .",
+        "lint": "eslint . && prettier --check .",
+        "lint-fix": "eslint --fix . && prettier --write .",
         "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
         "prepare": "npm run build",
         "find-circulars": "madge --circular --extensions ts ./"
@@ -22,39 +23,24 @@
     "author": "Diia",
     "license": "SEE LICENSE IN LICENSE.md",
     "dependencies": {
-        "glob": "11.0.0",
+        "glob": "11.1.0",
         "lookpath": "1.2.2",
         "yargs": "17.7.2"
     },
     "peerDependencies": {
-        "ts-proto": ">=1.181.0"
+        "ts-proto": ">=1.181.0 <2.0.0"
     },
     "devDependencies": {
-        "@diia-inhouse/configs": "2.2.0",
-        "@diia-inhouse/eslint-config": "5.1.0",
+        "@diia-inhouse/configs": "6.1.1",
+        "@diia-inhouse/eslint-config": "8.2.2",
         "@types/node": "20.17.1",
-        "eslint": "8.57.1",
+        "@types/yargs": "17.0.33",
+        "eslint": "9.33.0",
         "lockfile-lint": "4.14.0",
         "madge": "7.0.0",
         "prettier": "3.3.3",
         "rimraf": "6.0.1",
         "semantic-release": "24.0.0"
-    },
-    "eslintConfig": {
-        "extends": "@diia-inhouse/eslint-config",
-        "overrides": [
-            {
-                "files": [
-                    "*.ts"
-                ],
-                "parserOptions": {
-                    "project": [
-                        "./tsconfig.json",
-                        "./tests/tsconfig.json"
-                    ]
-                }
-            }
-        ]
     },
     "release": {
         "extends": "@diia-inhouse/configs/dist/semantic-release/package",

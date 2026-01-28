@@ -1,5 +1,4 @@
 #! /usr/bin/env node
-
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -30,8 +29,13 @@ async function main(): Promise<void> {
         .option('indexToDirs', {
             type: 'array',
             describe: 'A list of directory paths where [index.ts] files should be generated, including all subdirectories.',
+        })
+        .option('protoPaths', {
+            type: 'array',
+            describe: 'List of directories that should be included as import sources for proto',
+            string: true,
         }).argv
-    const { v, platform, generateClient, rootDir, outputDir, indexToDirs = [outputDir] } = options
+    const { v, platform, generateClient, rootDir, outputDir, indexToDirs = [outputDir], protoPaths = [] } = options
     const logger = new Logger(v)
     const outputAbsoluteDir = path.resolve(outputDir)
 
@@ -44,17 +48,19 @@ async function main(): Promise<void> {
     }
 
     logger.log(`Creating directory ${outputAbsoluteDir}...`)
-    await fs.promises.mkdir(options.outputDir, { recursive: true })
+
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await fs.promises.mkdir(outputDir, { recursive: true }) // nosemgrep: eslint.detect-non-literal-fs-filename
 
     let commandBuilder: CommandBuilder
 
     switch (platform) {
         case Platform.java: {
-            commandBuilder = new JavaCommandBuilder(logger, generateClient, rootDir, outputDir)
+            commandBuilder = new JavaCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths)
             break
         }
         case Platform.ts: {
-            commandBuilder = new TsCommandBuilder(logger, generateClient, rootDir, outputDir)
+            commandBuilder = new TsCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths)
             break
         }
         default: {
@@ -73,18 +79,18 @@ async function main(): Promise<void> {
             logger.log('Start to generate index files...')
             for (const dir of indexToDirs) {
                 try {
-                    const indexDir = path.resolve(<string>dir)
+                    const indexDir = path.resolve(dir as string)
 
                     await fs.promises.access(indexDir)
                     logger.log(`Generating index.ts for directory: ${indexDir}`)
-                    await Utils.generateIndexForDirectory(indexDir)
+                    await Utils.generateIndexForDirectory(indexDir, rootDir)
                 } catch (err) {
                     logger.log(`Error processing directory ${dir}: ${err}`)
                 }
             }
         }
     } catch (err_: unknown) {
-        const err = <{ stderr: Buffer; stack: never }>err_
+        const err = err_ as { stderr: Buffer; stack: never }
 
         logger.log('Command failed: ', err.stderr?.toString())
         logger.log(err.stack)
@@ -93,4 +99,4 @@ async function main(): Promise<void> {
     logger.log('Protoc command finished successfully')
 }
 
-main()
+void main()
