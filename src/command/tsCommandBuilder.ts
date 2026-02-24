@@ -79,7 +79,7 @@ export default class TsCommandBuilder extends CommandBuilder {
             '--ts_proto_opt=useSnakeTypeName=false',
             '--ts_proto_opt=unrecognizedEnum=false',
             '--ts_proto_opt=stringEnums=true',
-            '--ts_proto_opt=exportCommonSymbols=false',
+            '--ts_proto_opt=exportCommonSymbols=true',
             '--ts_proto_opt=env=node',
             '--ts_proto_opt=esModuleInterop=true',
             '--ts_proto_opt=importSuffix=.js',

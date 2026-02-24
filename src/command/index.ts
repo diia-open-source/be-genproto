@@ -10,11 +10,6 @@ export enum Platform {
     java = 'java',
 }
 
-enum InhousePackages {
-    types = '@diia-inhouse/types',
-    designSystem = '@diia-inhouse/design-system',
-}
-
 export abstract class CommandBuilder {
     constructor(
         protected readonly logger: Logger,
@@ -26,7 +21,7 @@ export abstract class CommandBuilder {
 
     protected async iPath(): Promise<string> {
         let iPath = ''
-        const protoFiles = await glob(`${this.rootDir}/**/*.proto`)
+        const protoFiles = await glob(`${this.rootDir}/**/*.proto`, { ignore: '**/node_modules/**' })
 
         if (protoFiles.length > 0) {
             iPath += ' ' + protoFiles.join(' ')
@@ -71,14 +66,9 @@ export abstract class CommandBuilder {
                 return acc
             }
 
-            let mappedPackage = InhousePackages.types
-            if (contents.includes('package ua.gov.diia.types.ds')) {
-                mappedPackage = InhousePackages.designSystem
-            }
-
             const splittedPath = value.split('/')
             const idx = splittedPath.indexOf('node_modules')
-            const packageName = platform === Platform.java ? mappedPackage : `${splittedPath[idx + 1]}/${splittedPath[idx + 2]}`
+            const packageName = platform === Platform.java ? '@diia-inhouse/types' : `${splittedPath[idx + 1]}/${splittedPath[idx + 2]}`
 
             const filename = splittedPath
                 .slice(idx + 1)
