@@ -8,6 +8,7 @@ import Logger from '../logger'
 export enum Platform {
     ts = 'ts',
     java = 'java',
+    python = 'python',
 }
 
 export abstract class CommandBuilder {
@@ -80,4 +81,6 @@ export abstract class CommandBuilder {
     }
 
     abstract protocCommand(): Promise<string[]>
+
+    abstract postProcess(): Promise<void>
 }

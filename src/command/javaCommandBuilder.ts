@@ -14,4 +14,6 @@ export default class JavaCommandBuilder extends CommandBuilder {
 
         return command
     }
+
+    async postProcess(): Promise<void> {}
 }

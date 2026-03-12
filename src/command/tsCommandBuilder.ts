@@ -96,7 +96,7 @@ export default class TsCommandBuilder extends CommandBuilder {
             command.push(`--proto_path ${designSystemProtoPath}`)
         }
 
-        for (const protoPath in this.protoPaths) {
+        for (const protoPath of this.protoPaths) {
             command.push(`--proto_path ${protoPath}`)
         }
 
@@ -118,6 +118,8 @@ export default class TsCommandBuilder extends CommandBuilder {
 
         return command
     }
+
+    async postProcess(): Promise<void> {}
 
     private async isFileExists(file: string): Promise<boolean> {
         try {

@@ -8,6 +8,7 @@ import yargs from 'yargs'
 
 import { CommandBuilder, Platform } from './command'
 import JavaCommandBuilder from './command/javaCommandBuilder'
+import PythonCommandBuilder from './command/pythonCommandBuilder'
 import TsCommandBuilder from './command/tsCommandBuilder'
 import Logger from './logger'
 import Utils from './utils'
@@ -63,6 +64,10 @@ async function main(): Promise<void> {
             commandBuilder = new TsCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths)
             break
         }
+        case Platform.python: {
+            commandBuilder = new PythonCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths)
+            break
+        }
         default: {
             throw new Error(`Unexpected platform: ${platform}`)
         }
@@ -94,6 +99,17 @@ async function main(): Promise<void> {
 
         logger.log('Command failed: ', err.stderr?.toString())
         logger.log(err.stack)
+        throw err
+    }
+
+    try {
+        await commandBuilder.postProcess()
+    } catch (err_: unknown) {
+        const err = err_ as { stderr: Buffer; stack: never }
+
+        logger.log('Postprocess failed: ', err.stderr?.toString())
+        logger.log(err.stack)
+        throw err
     }
 
     logger.log('Protoc command finished successfully')

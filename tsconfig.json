@@ -7,8 +7,7 @@
         "baseUrl": ".",
         "noUnusedLocals": false,
         "noUnusedParameters": false,
-        "strict": true,
-        "lib": ["dom"]
+        "strict": true
     },
     "include": ["src/genproto.ts"],
     "exclude": ["node_modules"]
