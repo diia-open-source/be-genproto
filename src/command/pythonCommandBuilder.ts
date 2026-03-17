@@ -29,12 +29,13 @@ export default class PythonCommandBuilder extends CommandBuilder {
             `--pyi_out=${this.outputDir}`,
             '--proto_path=proto',
             '--proto_path=node_modules/protobufjs/google',
+            '--proto_path=/usr/local/include',
             ...Object.keys(this.cardinalDependencies)
                 .filter((path) => existsSync(path)) // nosemgrep: eslint.detect-non-literal-fs-filename
                 .map((path) => `--proto_path=${path}`),
         ]
 
-        for (const protoPath in this.protoPaths) {
+        for (const protoPath of this.protoPaths) {
             command.push(`--proto_path ${protoPath}`)
         }
 
