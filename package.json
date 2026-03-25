@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "3.2.1",
+    "version": "3.2.2",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -15,6 +15,7 @@
         "lint-fix": "eslint --fix . && prettier --write .",
         "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
         "prepare": "npm run build",
+        "test": "vitest run",
         "find-circulars": "madge --circular --extensions ts ./"
     },
     "engines": {
@@ -22,6 +23,10 @@
     },
     "author": "Diia",
     "license": "SEE LICENSE IN LICENSE.md",
+    "files": [
+        "dist",
+        "src"
+    ],
     "dependencies": {
         "glob": "11.1.0",
         "lookpath": "1.2.2",
@@ -40,13 +45,11 @@
         "madge": "7.0.0",
         "prettier": "3.3.3",
         "rimraf": "6.0.1",
-        "semantic-release": "24.0.0"
+        "semantic-release": "24.0.0",
+        "vitest": "4.1.1"
     },
     "release": {
-        "extends": "@diia-inhouse/configs/dist/semantic-release/package",
-        "branches": [
-            "main"
-        ]
+        "extends": "@diia-inhouse/configs/dist/semantic-release/package"
     },
     "commitlint": {
         "extends": "@diia-inhouse/configs/dist/commitlint"

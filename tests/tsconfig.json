@@ -1,12 +1,13 @@
 {
     "extends": "@diia-inhouse/configs/tsconfig",
     "compilerOptions": {
-        "outDir": "dist",
-        "declaration": true,
-        "declarationDir": "dist/types",
-        "baseUrl": ".",
+        "baseUrl": "../",
+        "types": ["vitest/globals"],
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "isolatedModules": true,
+        "noEmit": true,
         "strict": true
     },
-    "include": ["src/genproto.ts"],
-    "exclude": ["node_modules"]
+    "include": ["./**/*", "../vitest.config.mts"]
 }

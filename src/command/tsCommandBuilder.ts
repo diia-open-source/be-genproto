@@ -1,7 +1,58 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs/promises'
+import path from 'node:path'
+
+import { glob } from 'glob'
 
 import { CommandBuilder, Platform } from './index'
+
+const reservedWords = new Set([
+    'break',
+    'case',
+    'catch',
+    'class',
+    'const',
+    'continue',
+    'debugger',
+    'default',
+    'delete',
+    'do',
+    'else',
+    'enum',
+    'export',
+    'extends',
+    'false',
+    'finally',
+    'for',
+    'function',
+    'if',
+    'import',
+    'in',
+    'instanceof',
+    'new',
+    'null',
+    'return',
+    'super',
+    'switch',
+    'this',
+    'throw',
+    'true',
+    'try',
+    'typeof',
+    'var',
+    'void',
+    'while',
+    'with',
+    'yield',
+    'let',
+    'static',
+    'implements',
+    'interface',
+    'package',
+    'private',
+    'protected',
+    'public',
+])
 
 export default class TsCommandBuilder extends CommandBuilder {
     // By default ts plugin should be linked to .bin dir but in case if it doesn't
@@ -120,7 +171,70 @@ export default class TsCommandBuilder extends CommandBuilder {
         return command
     }
 
-    async postProcess(): Promise<void> {}
+    async postProcess(): Promise<void> {
+        const files = await glob(path.join(this.outputDir, '**/*.ts'))
+
+        for (const file of files) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            const content = await fs.readFile(file, 'utf8') // nosemgrep: eslint.detect-non-literal-fs-filename
+
+            if (!content.includes('export namespace ')) {
+                continue
+            }
+
+            const result = this.stripReservedWordTypeAliases(content)
+
+            if (result !== content) {
+                // eslint-disable-next-line security/detect-non-literal-fs-filename
+                await fs.writeFile(file, result) // nosemgrep: eslint.detect-non-literal-fs-filename
+            }
+        }
+    }
+
+    private stripReservedWordTypeAliases(content: string): string {
+        const lines = content.split('\n')
+        const output: string[] = []
+        let insideNamespace = false
+        let namespaceStartIndex = -1
+        let hasNonReservedMember = false
+
+        for (const line of lines) {
+            if (line.startsWith('export namespace ')) {
+                insideNamespace = true
+                namespaceStartIndex = output.length
+                hasNonReservedMember = false
+                output.push(line)
+
+                continue
+            }
+
+            if (insideNamespace && line === '}') {
+                insideNamespace = false
+
+                if (hasNonReservedMember) {
+                    output.push(line)
+                } else {
+                    output.splice(namespaceStartIndex)
+                }
+
+                continue
+            }
+
+            if (insideNamespace) {
+                const match = line.match(/^\s*export type (\w+) = typeof /)
+
+                if (match && reservedWords.has(match[1])) {
+                    continue
+                }
+
+                hasNonReservedMember = true
+            }
+
+            output.push(line)
+        }
+
+        return output.join('\n')
+    }
 
     private async isFileExists(file: string): Promise<boolean> {
         try {
