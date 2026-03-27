@@ -166,8 +166,8 @@ async function replaceRulesTask(
                 const importName = dirpath.replaceAll('/', '.')
 
                 replaceRules.push({
-                    from: `from ${importName} import`,
-                    to: `from ${depname}.${importName} import`,
+                    from: `from ${importName} import ${fileName}_pb2`,
+                    to: `from ${depname}.${importName} import ${fileName}_pb2`,
                 })
             }
         }
