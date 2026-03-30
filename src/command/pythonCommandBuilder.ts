@@ -18,6 +18,7 @@ export default class PythonCommandBuilder extends CommandBuilder {
     private cardinalDependencies: Record<string, string> = {
         'node_modules/@diia-inhouse/types/dist/proto': 'types_proto',
         'node_modules/@diia-inhouse/design-system/dist/proto': 'design_system_proto',
+        proto: this.outputDir,
     }
 
     async protocCommand(): Promise<string[]> {
