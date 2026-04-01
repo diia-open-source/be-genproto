@@ -1,6 +1,7 @@
+import { once } from 'node:events'
 import syncFs, { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { promises as readline } from 'node:readline'
+import { createInterface } from 'node:readline'
 
 /**
  * Extract exported symbol names from a ts-proto generated TypeScript file.
@@ -55,13 +56,14 @@ export default {
         for (const recPaths of await recursivePaths(dir)) {
             // eslint-disable-next-line security/detect-non-literal-fs-filename
             const stream = syncFs.createReadStream(recPaths) // nosemgrep: eslint.detect-non-literal-fs-filename
-            const rl = readline.createInterface({
+            const rl = createInterface({
                 input: stream,
                 crlfDelay: Infinity,
             })
 
             let ownPackage = false
-            for await (const line of rl) {
+
+            rl.on('line', (line) => {
                 const matchArr = line.match(/^\/\/ source: (.+)$/)
                 if (matchArr) {
                     const protoFile = matchArr[1]
@@ -71,12 +73,15 @@ export default {
                     // eslint-disable-next-line security/detect-non-literal-fs-filename
                     if (syncFs.existsSync(protofilepath)) { // nosemgrep: eslint.detect-non-literal-fs-filename
                         // eslint-disable-next-line security/detect-non-literal-fs-filename
-                        const contents = await fs.readFile(protofilepath) // nosemgrep: eslint.detect-non-literal-fs-filename
+                        const contents = syncFs.readFileSync(protofilepath) // nosemgrep: eslint.detect-non-literal-fs-filename
 
                         ownPackage = contents.includes('package ua.gov.diia')
                     }
                 }
-            }
+            })
+
+            await once(rl, 'close')
+            stream.destroy()
 
             const fileName = path.basename(recPaths, path.extname(recPaths))
             const parentDirName = path.basename(path.dirname(recPaths))

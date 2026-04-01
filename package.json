@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "3.2.5",
+    "version": "3.2.6",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -15,7 +15,7 @@
         "lint-fix": "eslint --fix . && prettier --write .",
         "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
         "prepare": "npm run build",
-        "test": "vitest run",
+        "test": "tsc --project tests/tsconfig.json && vitest run",
         "find-circulars": "madge --circular --extensions ts ./"
     },
     "engines": {
@@ -40,13 +40,14 @@
         "@diia-inhouse/eslint-config": "8.6.0",
         "@types/node": "20.17.1",
         "@types/yargs": "17.0.33",
+        "@vitest/coverage-v8": "4.1.2",
         "eslint": "9.33.0",
         "lockfile-lint": "4.14.0",
         "madge": "7.0.0",
         "prettier": "3.3.3",
         "rimraf": "6.0.1",
         "semantic-release": "24.0.0",
-        "vitest": "4.1.1"
+        "vitest": "4.1.2"
     },
     "release": {
         "extends": "@diia-inhouse/configs/dist/semantic-release/package"
