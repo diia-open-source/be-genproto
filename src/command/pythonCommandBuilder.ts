@@ -6,6 +6,7 @@ import path from 'node:path'
 import { finished } from 'node:stream/promises'
 
 import { glob } from 'glob'
+import { snakeCase } from 'lodash'
 
 import Logger from '../logger'
 import { CommandBuilder } from './index'
@@ -64,7 +65,7 @@ export default class PythonCommandBuilder extends CommandBuilder {
     private async mapPythonImports(): Promise<void> {
         const protoPattern = '/**/*.proto'
         const mapping: Record<string, string> = {}
-        let replaceRules: { from: string; to: string }[] = []
+        let replaceRules: { regex: RegExp; to: string }[] = []
 
         for (const dep in this.cardinalDependencies) {
             const files = await glob(dep + protoPattern)
@@ -82,12 +83,12 @@ export default class PythonCommandBuilder extends CommandBuilder {
 
         const rulesTasks = []
         for (const localProto of localProtos) {
-            rulesTasks.push(replaceRulesTask(localProto, mapping, this.logger))
+            rulesTasks.push(replaceRulesTask(localProto, mapping, this.outputDir, this.logger))
         }
 
         const rules = await Promise.all(rulesTasks)
 
-        replaceRules = [...new Map(rules.flat().map((rule) => [rule.from, rule])).values()]
+        replaceRules = [...new Map(rules.flat().map((rule) => [rule.regex.source, rule])).values()]
 
         const generatedFiles = await glob(this.outputDir + '/**/*.py')
 
@@ -98,6 +99,14 @@ export default class PythonCommandBuilder extends CommandBuilder {
 
         await Promise.all(tasks)
     }
+}
+
+function doubleInnerUnderscores(str: string): string {
+    return str.replaceAll(/([\da-z])_(?=[\da-z])/gi, '$1__')
+}
+
+function escapeRegex(str: string): string {
+    return str.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`)
 }
 
 async function touchFilesInTree(dirPath: string, fileName: string, logger: Logger): Promise<void> {
@@ -125,13 +134,31 @@ async function touchFilesInTree(dirPath: string, fileName: string, logger: Logge
 async function replaceRulesTask(
     localProto: string,
     mapping: Record<string, string>,
+    outputDir: string,
     logger: Logger,
-): Promise<{ from: string; to: string }[]> {
+): Promise<{ regex: RegExp; to: string }[]> {
     const replaceRules = []
 
     let handle: fsPromises.FileHandle | undefined
     try {
         handle = await fsPromises.open(localProto) // nosemgrep: eslint.detect-non-literal-fs-filename
+
+        const protoDirname = path.dirname(localProto)
+        const protoFilename = path.basename(localProto, '.proto')
+        const protoFilenameSnake = snakeCase(protoFilename)
+        const protoFilenameSnakeImportAlies = doubleInnerUnderscores(protoFilenameSnake)
+
+        if (protoDirname === 'proto') {
+            // eslint-disable-next-line security/detect-non-literal-regexp
+            const rootImportRegex = new RegExp( // nosemgrep: eslint.detect-non-literal-regexp
+                `^${escapeRegex(`import ${protoFilenameSnake}_pb2 as ${protoFilenameSnakeImportAlies}__pb2`)}`,
+            )
+
+            replaceRules.push({
+                regex: rootImportRegex,
+                to: `from ${outputDir} import ${protoFilenameSnake}_pb2 as ${protoFilenameSnakeImportAlies}__pb2`,
+            })
+        }
 
         for await (const line of handle.readLines()) {
             const result = importRegex.exec(line)
@@ -143,6 +170,7 @@ async function replaceRulesTask(
 
             const dirpath = path.dirname(importPath)
             const fileName = path.basename(importPath, '.proto')
+            const fileNameSnake = snakeCase(fileName)
 
             if (dirpath === '.') {
                 const depname = mapping[importPath]
@@ -152,9 +180,14 @@ async function replaceRulesTask(
                     continue
                 }
 
+                logger.log(`I'm looking for ${fileNameSnake} (${fileName}) to map as "import ${fileNameSnake}_pb2"`)
+
+                // eslint-disable-next-line security/detect-non-literal-regexp
+                const flatImportRegex = new RegExp(`^${escapeRegex(`import ${fileNameSnake}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
+
                 replaceRules.push({
-                    from: `import ${fileName}_pb2`,
-                    to: `from ${depname} import ${fileName}_pb2`,
+                    regex: flatImportRegex,
+                    to: `from ${depname} import ${fileNameSnake}_pb2`,
                 })
             } else {
                 const depname = mapping[importPath]
@@ -166,9 +199,14 @@ async function replaceRulesTask(
 
                 const importName = dirpath.replaceAll('/', '.')
 
+                logger.log(`I'm looking for ${fileNameSnake} (${fileName}) to map as "from ${importName} import ${fileNameSnake}_pb2"`)
+
+                // eslint-disable-next-line security/detect-non-literal-regexp
+                const nestedImportRegex = new RegExp(`^${escapeRegex(`from ${importName} import ${fileNameSnake}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
+
                 replaceRules.push({
-                    from: `from ${importName} import ${fileName}_pb2`,
-                    to: `from ${depname}.${importName} import ${fileName}_pb2`,
+                    regex: nestedImportRegex,
+                    to: `from ${depname}.${importName} import ${fileNameSnake}_pb2`,
                 })
             }
         }
@@ -181,7 +219,7 @@ async function replaceRulesTask(
     return replaceRules
 }
 
-async function fileMapper(generatedFile: string, replaceRules: { from: string; to: string }[], logger: Logger): Promise<void> {
+async function fileMapper(generatedFile: string, replaceRules: { regex: RegExp; to: string }[], logger: Logger): Promise<void> {
     let handle: fsPromises.FileHandle | undefined
     let wstream: WriteStream | undefined
     let isOk = false
@@ -193,7 +231,7 @@ async function fileMapper(generatedFile: string, replaceRules: { from: string; t
         for await (const line of handle.readLines()) {
             let mutableLine = line
             for (const rule of replaceRules) {
-                mutableLine = mutableLine.replace(rule.from, rule.to)
+                mutableLine = mutableLine.replace(rule.regex, rule.to)
             }
 
             const writeOk = wstream.write(mutableLine + '\n')
