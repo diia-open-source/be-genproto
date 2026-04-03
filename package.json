@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "3.2.7",
+    "version": "3.2.8",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "bin": {
         "genproto": "./dist/genproto.js"
@@ -31,7 +31,7 @@
         "glob": "11.1.0",
         "lookpath": "1.2.2",
         "yargs": "17.7.2",
-        "lodash": "4.17.23"
+        "lodash": "4.18.1"
     },
     "peerDependencies": {
         "ts-proto": ">=2.7.0"
