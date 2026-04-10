@@ -170,7 +170,6 @@ async function replaceRulesTask(
 
             const dirpath = path.dirname(importPath)
             const fileName = path.basename(importPath, '.proto')
-            const fileNameSnake = snakeCase(fileName)
 
             if (dirpath === '.') {
                 const depname = mapping[importPath]
@@ -180,14 +179,14 @@ async function replaceRulesTask(
                     continue
                 }
 
-                logger.log(`I'm looking for ${fileNameSnake} (${fileName}) to map as "import ${fileNameSnake}_pb2"`)
+                logger.log(`I'm looking for ${fileName} (${fileName}) to map as "import ${fileName}_pb2"`)
 
                 // eslint-disable-next-line security/detect-non-literal-regexp
-                const flatImportRegex = new RegExp(`^${escapeRegex(`import ${fileNameSnake}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
+                const flatImportRegex = new RegExp(`^${escapeRegex(`import ${fileName}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
 
                 replaceRules.push({
                     regex: flatImportRegex,
-                    to: `from ${depname} import ${fileNameSnake}_pb2`,
+                    to: `from ${depname} import ${fileName}_pb2`,
                 })
             } else {
                 const depname = mapping[importPath]
@@ -199,14 +198,14 @@ async function replaceRulesTask(
 
                 const importName = dirpath.replaceAll('/', '.')
 
-                logger.log(`I'm looking for ${fileNameSnake} (${fileName}) to map as "from ${importName} import ${fileNameSnake}_pb2"`)
+                logger.log(`I'm looking for ${fileName} (${fileName}) to map as "from ${importName} import ${fileName}_pb2"`)
 
                 // eslint-disable-next-line security/detect-non-literal-regexp
-                const nestedImportRegex = new RegExp(`^${escapeRegex(`from ${importName} import ${fileNameSnake}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
+                const nestedImportRegex = new RegExp(`^${escapeRegex(`from ${importName} import ${fileName}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
 
                 replaceRules.push({
                     regex: nestedImportRegex,
-                    to: `from ${depname}.${importName} import ${fileNameSnake}_pb2`,
+                    to: `from ${depname}.${importName} import ${fileName}_pb2`,
                 })
             }
         }
