@@ -114,9 +114,9 @@ export default class TsCommandBuilder extends CommandBuilder {
 
         switch (projectPlatform) {
             case Platform.java: {
-                typesProtoPath = './build/extracted-protos/main/'
-                typesSubPaths = ['build', 'extracted-protos', 'main']
-                dependenciesPattern = 'build/extracted-protos/main/**/*.proto'
+                typesProtoPath = `./${this.javaModule ?? '.'}/build/extracted-protos/main/`
+                typesSubPaths = [`${this.javaModule ?? '.'}`, 'build', 'extracted-protos', 'main']
+                dependenciesPattern = `${this.javaModule ?? '.'}/build/extracted-protos/main/**/*.proto`
                 execSync(`./gradlew ${this.javaModule ?? ''}:extractProto`, { stdio: 'pipe' })
                 break
             }
