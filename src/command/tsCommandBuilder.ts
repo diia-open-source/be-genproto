@@ -4,6 +4,7 @@ import path from 'node:path'
 
 import { glob } from 'glob'
 
+import Logger from '../logger'
 import { CommandBuilder, Platform } from './index'
 
 const reservedWords = new Set([
@@ -63,6 +64,17 @@ export default class TsCommandBuilder extends CommandBuilder {
         './node_modules/@diia-inhouse/genproto/node_modules/ts-proto/protoc-gen-ts_proto',
     ]
 
+    constructor(
+        protected readonly logger: Logger,
+        protected readonly generateClient: boolean,
+        protected readonly rootDir: string,
+        protected readonly outputDir: string,
+        protected readonly protoPaths: string[],
+        private javaModule?: string,
+    ) {
+        super(logger, generateClient, rootDir, outputDir, protoPaths)
+    }
+
     async getProtoTsPluginLocation(): Promise<string | undefined> {
         const pluginLocations = []
 
@@ -105,7 +117,7 @@ export default class TsCommandBuilder extends CommandBuilder {
                 typesProtoPath = './build/extracted-protos/main/'
                 typesSubPaths = ['build', 'extracted-protos', 'main']
                 dependenciesPattern = 'build/extracted-protos/main/**/*.proto'
-                execSync('./gradlew :extractProto', { stdio: 'pipe' })
+                execSync(`./gradlew ${this.javaModule ?? ''}:extractProto`, { stdio: 'pipe' })
                 break
             }
             case Platform.ts: {

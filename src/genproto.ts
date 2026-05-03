@@ -35,8 +35,9 @@ async function main(): Promise<void> {
             type: 'array',
             describe: 'List of directories that should be included as import sources for proto',
             string: true,
-        }).argv
-    const { v, platform, generateClient, rootDir, outputDir, indexToDirs = [outputDir], protoPaths = [] } = options
+        })
+        .option('javaModule', { type: 'string', default: '' }).argv
+    const { v, platform, generateClient, rootDir, outputDir, indexToDirs = [outputDir], protoPaths = [], javaModule } = options
     const logger = new Logger(v)
     const outputAbsoluteDir = path.resolve(outputDir)
 
@@ -61,7 +62,7 @@ async function main(): Promise<void> {
             break
         }
         case Platform.ts: {
-            commandBuilder = new TsCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths)
+            commandBuilder = new TsCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths, javaModule)
             break
         }
         case Platform.python: {
