@@ -3,25 +3,28 @@ import syncFs, { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
 
+interface ExportedNames {
+    valueNames: string[]
+    typeNames: string[]
+}
+
 /**
  * Extract exported symbol names from a ts-proto generated TypeScript file.
  * Returns arrays of value exports and type-only exports separately.
  * Names that exist as both value and type (e.g. interface + const with same name)
  * are only included in valueNames to avoid duplicate identifier errors.
  */
-function extractExportedNames(content: string): { valueNames: string[]; typeNames: string[] } {
+function extractExportedNames(content: string): ExportedNames {
     const valueSet = new Set<string>()
     const typeSet = new Set<string>()
 
-    // eslint-disable-next-line regexp/no-unused-capturing-group
-    const exportRegex = /^export\s+(?:(const|let|var|function|enum|class)\s+(\w+)|(interface|type)\s+(\w+))/gm
-    let match
-    // eslint-disable-next-line no-cond-assign
-    while ((match = exportRegex.exec(content)) !== null) {
-        if (match[2]) {
-            valueSet.add(match[2])
-        } else if (match[4]) {
-            typeSet.add(match[4])
+    const exportRegex = /^export\s+(?:(?:const|let|var|function|enum|class)\s+(\w+)|(?:interface|type)\s+(\w+))/gm
+
+    for (const match of content.matchAll(exportRegex)) {
+        if (match[1]) {
+            valueSet.add(match[1])
+        } else if (match[2]) {
+            typeSet.add(match[2])
         }
     }
 
@@ -36,7 +39,6 @@ export default {
         const exportedNames = new Set<string>()
 
         const recursivePaths = async (realpath: string): Promise<string[]> => {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
             const items = await fs.readdir(realpath, { withFileTypes: true }) // nosemgrep: eslint.detect-non-literal-fs-filename
             let paths: string[] = []
 
@@ -54,7 +56,6 @@ export default {
         }
 
         for (const recPaths of await recursivePaths(dir)) {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
             const stream = syncFs.createReadStream(recPaths) // nosemgrep: eslint.detect-non-literal-fs-filename
             const rl = createInterface({
                 input: stream,
@@ -69,10 +70,8 @@ export default {
                     const protoFile = matchArr[1]
 
                     const protofilepath = path.resolve(protoRoot, protoFile)
-                    // prettier-ignore
-                    // eslint-disable-next-line security/detect-non-literal-fs-filename
-                    if (syncFs.existsSync(protofilepath)) { // nosemgrep: eslint.detect-non-literal-fs-filename
-                        // eslint-disable-next-line security/detect-non-literal-fs-filename
+                    const exists = syncFs.existsSync(protofilepath) // nosemgrep: eslint.detect-non-literal-fs-filename
+                    if (exists) {
                         const contents = syncFs.readFileSync(protofilepath) // nosemgrep: eslint.detect-non-literal-fs-filename
 
                         ownPackage = contents.includes('package ua.gov.diia')
@@ -94,7 +93,6 @@ export default {
 
             if (ownPackage) {
                 // Read file and extract exported names to avoid re-export conflicts (TS2308)
-                // eslint-disable-next-line security/detect-non-literal-fs-filename
                 const content = await fs.readFile(recPaths, 'utf8') // nosemgrep: eslint.detect-non-literal-fs-filename
                 const { valueNames, typeNames } = extractExportedNames(content)
 
@@ -118,7 +116,6 @@ export default {
                     exportLines.push(parts.join('\n'))
                 }
             } else {
-                // eslint-disable-next-line unicorn/prefer-string-replace-all
                 const namespace = fileNameWithPrefix.replace(/[/\\]/g, '_').replace(/[^\w$]/g, '_')
 
                 exportLines.push(`export * as ${namespace} from '${importPath}';`)
@@ -128,8 +125,7 @@ export default {
         if (exportLines.length > 0) {
             const indexFilePath = path.join(dir, 'index.ts')
 
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            await fs.writeFile(indexFilePath, exportLines.join('\n\n') + '\n') // nosemgrep: eslint.detect-non-literal-fs-filename
+            await fs.writeFile(indexFilePath, `${exportLines.join('\n\n')}\n`) // nosemgrep: eslint.detect-non-literal-fs-filename
         }
     },
 }

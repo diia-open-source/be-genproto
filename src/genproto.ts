@@ -5,13 +5,14 @@ import path from 'node:path'
 
 import { lookpath } from 'lookpath'
 import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
-import { CommandBuilder, Platform } from './command'
-import JavaCommandBuilder from './command/javaCommandBuilder'
-import PythonCommandBuilder from './command/pythonCommandBuilder'
-import TsCommandBuilder from './command/tsCommandBuilder'
-import Logger from './logger'
-import Utils from './utils'
+import { CommandBuilder, Platform } from './command/index.js'
+import JavaCommandBuilder from './command/javaCommandBuilder.js'
+import PythonCommandBuilder from './command/pythonCommandBuilder.js'
+import TsCommandBuilder from './command/tsCommandBuilder.js'
+import Logger from './logger.js'
+import Utils from './utils/index.js'
 
 async function main(): Promise<void> {
     const protocExists = await lookpath('protoc')
@@ -20,7 +21,7 @@ async function main(): Promise<void> {
         throw new Error("Couldn't find protoc in PATH")
     }
 
-    const options = await yargs
+    const options = await yargs(hideBin(process.argv))
         .usage('$0 --rootDir dirname --outputDir dirname')
         .option('v', { type: 'boolean', default: false })
         .option('platform', { type: 'string', default: Platform.ts })
@@ -51,12 +52,11 @@ async function main(): Promise<void> {
 
     logger.log(`Creating directory ${outputAbsoluteDir}...`)
 
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
     await fs.promises.mkdir(outputDir, { recursive: true }) // nosemgrep: eslint.detect-non-literal-fs-filename
 
     let commandBuilder: CommandBuilder
 
-    switch (platform) {
+    switch (platform as Platform) {
         case Platform.java: {
             commandBuilder = new JavaCommandBuilder(logger, generateClient, rootDir, outputDir, protoPaths)
             break
@@ -91,7 +91,7 @@ async function main(): Promise<void> {
                     logger.log(`Generating index.ts for directory: ${indexDir}`)
                     await Utils.generateIndexForDirectory(indexDir, rootDir)
                 } catch (err) {
-                    logger.log(`Error processing directory ${dir}: ${err}`)
+                    logger.log(`Error processing directory ${dir}: ${err instanceof Error ? err.message : String(err)}`)
                 }
             }
         }

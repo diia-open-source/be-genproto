@@ -4,58 +4,58 @@ import path from 'node:path'
 
 import { glob } from 'glob'
 
-import Logger from '../logger'
-import { CommandBuilder, Platform } from './index'
-
-const reservedWords = new Set([
-    'break',
-    'case',
-    'catch',
-    'class',
-    'const',
-    'continue',
-    'debugger',
-    'default',
-    'delete',
-    'do',
-    'else',
-    'enum',
-    'export',
-    'extends',
-    'false',
-    'finally',
-    'for',
-    'function',
-    'if',
-    'import',
-    'in',
-    'instanceof',
-    'new',
-    'null',
-    'return',
-    'super',
-    'switch',
-    'this',
-    'throw',
-    'true',
-    'try',
-    'typeof',
-    'var',
-    'void',
-    'while',
-    'with',
-    'yield',
-    'let',
-    'static',
-    'implements',
-    'interface',
-    'package',
-    'private',
-    'protected',
-    'public',
-])
+import Logger from '../logger.js'
+import { CommandBuilder, Platform } from './index.js'
 
 export default class TsCommandBuilder extends CommandBuilder {
+    private static readonly reservedWords = new Set([
+        'break',
+        'case',
+        'catch',
+        'class',
+        'const',
+        'continue',
+        'debugger',
+        'default',
+        'delete',
+        'do',
+        'else',
+        'enum',
+        'export',
+        'extends',
+        'false',
+        'finally',
+        'for',
+        'function',
+        'if',
+        'import',
+        'in',
+        'instanceof',
+        'new',
+        'null',
+        'return',
+        'super',
+        'switch',
+        'this',
+        'throw',
+        'true',
+        'try',
+        'typeof',
+        'var',
+        'void',
+        'while',
+        'with',
+        'yield',
+        'let',
+        'static',
+        'implements',
+        'interface',
+        'package',
+        'private',
+        'protected',
+        'public',
+    ])
+
     // By default ts plugin should be linked to .bin dir but in case if it doesn't
     // try to look it up in "standard" locations
     private tsPluginLocations = [
@@ -80,7 +80,6 @@ export default class TsCommandBuilder extends CommandBuilder {
 
         for (const location of this.tsPluginLocations) {
             try {
-                // eslint-disable-next-line security/detect-non-literal-fs-filename
                 await fs.realpath(location) // nosemgrep: eslint.detect-non-literal-fs-filename
             } catch {
                 continue
@@ -115,7 +114,7 @@ export default class TsCommandBuilder extends CommandBuilder {
         switch (projectPlatform) {
             case Platform.java: {
                 typesProtoPath = `./${this.javaModule ?? '.'}/build/extracted-protos/main/`
-                typesSubPaths = [`${this.javaModule ?? '.'}`, 'build', 'extracted-protos', 'main']
+                typesSubPaths = [this.javaModule ?? '.', 'build', 'extracted-protos', 'main']
                 dependenciesPattern = `${this.javaModule ?? '.'}/build/extracted-protos/main/**/*.proto`
                 execSync(`./gradlew ${this.javaModule ?? ''}:extractProto`, { stdio: 'pipe' })
                 break
@@ -187,7 +186,6 @@ export default class TsCommandBuilder extends CommandBuilder {
         const files = await glob(path.join(this.outputDir, '**/*.ts'))
 
         for (const file of files) {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
             const content = await fs.readFile(file, 'utf8') // nosemgrep: eslint.detect-non-literal-fs-filename
 
             if (!content.includes('export namespace ')) {
@@ -197,7 +195,6 @@ export default class TsCommandBuilder extends CommandBuilder {
             const result = this.stripReservedWordTypeAliases(content)
 
             if (result !== content) {
-                // eslint-disable-next-line security/detect-non-literal-fs-filename
                 await fs.writeFile(file, result) // nosemgrep: eslint.detect-non-literal-fs-filename
             }
         }
@@ -235,7 +232,7 @@ export default class TsCommandBuilder extends CommandBuilder {
             if (insideNamespace) {
                 const match = line.match(/^\s*export type (\w+) = typeof /)
 
-                if (match && reservedWords.has(match[1])) {
+                if (match && TsCommandBuilder.reservedWords.has(match[1])) {
                     continue
                 }
 

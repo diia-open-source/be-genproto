@@ -1,4 +1,3 @@
-/* eslint-disable security/detect-non-literal-fs-filename */
 import { once } from 'node:events'
 import { WriteStream, createWriteStream, existsSync } from 'node:fs'
 import fsPromises from 'node:fs/promises'
@@ -6,16 +5,16 @@ import path from 'node:path'
 import { finished } from 'node:stream/promises'
 
 import { glob } from 'glob'
-import { snakeCase } from 'lodash'
+import snakeCase from 'lodash/snakeCase.js'
 
-import Logger from '../logger'
-import { CommandBuilder } from './index'
-
-// import "designSystem/molecules/attentionIconMessageMlc.proto";
-const importRegex = /import "(?<path>[^"]+)";/
-const slashPrefix = /^\/+/
+import Logger from '../logger.js'
+import { CommandBuilder } from './index.js'
 
 export default class PythonCommandBuilder extends CommandBuilder {
+    // import "designSystem/molecules/attentionIconMessageMlc.proto";
+    static readonly importRegex = /import "(?<path>[^"]+)";/
+    static readonly slashPrefix = /^\/+/
+
     private cardinalDependencies: Record<string, string> = {
         'node_modules/@diia-inhouse/types/dist/proto': 'types_proto',
         'node_modules/@diia-inhouse/design-system/dist/proto': 'design_system_proto',
@@ -33,8 +32,8 @@ export default class PythonCommandBuilder extends CommandBuilder {
             '--proto_path=node_modules/protobufjs/google',
             '--proto_path=/usr/local/include',
             ...Object.keys(this.cardinalDependencies)
-                .filter((path) => existsSync(path)) // nosemgrep: eslint.detect-non-literal-fs-filename
-                .map((path) => `--proto_path=${path}`),
+                .filter((depPath) => existsSync(depPath)) // nosemgrep: eslint.detect-non-literal-fs-filename
+                .map((depPath) => `--proto_path=${depPath}`),
         ]
 
         for (const protoPath of this.protoPaths) {
@@ -71,7 +70,7 @@ export default class PythonCommandBuilder extends CommandBuilder {
             const files = await glob(dep + protoPattern)
 
             for (const file of files) {
-                const res = file.replace(dep, '').replace(slashPrefix, '')
+                const res = file.replace(dep, '').replace(PythonCommandBuilder.slashPrefix, '')
 
                 mapping[res] = this.cardinalDependencies[dep]
 
@@ -79,7 +78,7 @@ export default class PythonCommandBuilder extends CommandBuilder {
             }
         }
 
-        const localProtos = await glob('proto' + protoPattern)
+        const localProtos = await glob(`proto${protoPattern}`)
 
         const rulesTasks = []
         for (const localProto of localProtos) {
@@ -90,7 +89,7 @@ export default class PythonCommandBuilder extends CommandBuilder {
 
         replaceRules = [...new Map(rules.flat().map((rule) => [rule.regex.source, rule])).values()]
 
-        const generatedFiles = await glob(this.outputDir + '/**/*.py')
+        const generatedFiles = await glob(`${this.outputDir}/**/*.py`)
 
         const tasks: Promise<void>[] = []
         for (const generatedFile of generatedFiles) {
@@ -119,7 +118,7 @@ async function touchFilesInTree(dirPath: string, fileName: string, logger: Logge
         await handle.utimes(new Date(), new Date()) // nosemgrep: eslint.detect-non-literal-fs-filename
         await handle.close()
     } catch (err) {
-        logger.log(`Could not touch file in ${dirPath}: ${err instanceof Error ? err.message : err}`)
+        logger.log(`Could not touch file in ${dirPath}: ${err instanceof Error ? err.message : String(err)}`)
     }
 
     for (const entry of entries) {
@@ -149,7 +148,6 @@ async function replaceRulesTask(
         const protoFilenameSnakeImportAlies = doubleInnerUnderscores(protoFilenameSnake)
 
         if (protoDirname === 'proto') {
-            // eslint-disable-next-line security/detect-non-literal-regexp
             const rootImportRegex = new RegExp( // nosemgrep: eslint.detect-non-literal-regexp
                 `^${escapeRegex(`import ${protoFilenameSnake}_pb2 as ${protoFilenameSnakeImportAlies}__pb2`)}`,
             )
@@ -161,7 +159,7 @@ async function replaceRulesTask(
         }
 
         for await (const line of handle.readLines()) {
-            const result = importRegex.exec(line)
+            const result = PythonCommandBuilder.importRegex.exec(line)
             const importPath = result?.groups?.path
 
             if (importPath === undefined) {
@@ -175,13 +173,12 @@ async function replaceRulesTask(
                 const depname = mapping[importPath]
 
                 if (depname === undefined) {
-                    logger.log(`Looking for ${importPath} in mapper, received ${depname}. Skipping the mapper.`)
+                    logger.log(`Looking for ${importPath} in mapper, received undefined. Skipping the mapper.`)
                     continue
                 }
 
                 logger.log(`I'm looking for ${fileName} (${fileName}) to map as "import ${fileName}_pb2"`)
 
-                // eslint-disable-next-line security/detect-non-literal-regexp
                 const flatImportRegex = new RegExp(`^${escapeRegex(`import ${fileName}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
 
                 replaceRules.push({
@@ -192,7 +189,7 @@ async function replaceRulesTask(
                 const depname = mapping[importPath]
 
                 if (depname === undefined) {
-                    logger.log(`Looking for ${importPath} in mapper, received ${depname}. Skipping the mapper.`)
+                    logger.log(`Looking for ${importPath} in mapper, received undefined. Skipping the mapper.`)
                     continue
                 }
 
@@ -200,7 +197,6 @@ async function replaceRulesTask(
 
                 logger.log(`I'm looking for ${fileName} (${fileName}) to map as "from ${importName} import ${fileName}_pb2"`)
 
-                // eslint-disable-next-line security/detect-non-literal-regexp
                 const nestedImportRegex = new RegExp(`^${escapeRegex(`from ${importName} import ${fileName}_pb2`)}`) // nosemgrep: eslint.detect-non-literal-regexp
 
                 replaceRules.push({
@@ -225,7 +221,7 @@ async function fileMapper(generatedFile: string, replaceRules: { regex: RegExp; 
     try {
         handle = await fsPromises.open(generatedFile) // nosemgrep: eslint.detect-non-literal-fs-filename
 
-        wstream = createWriteStream(generatedFile + '.new') // nosemgrep: eslint.detect-non-literal-fs-filename
+        wstream = createWriteStream(`${generatedFile}.new`) // nosemgrep: eslint.detect-non-literal-fs-filename
 
         for await (const line of handle.readLines()) {
             let mutableLine = line
@@ -233,7 +229,7 @@ async function fileMapper(generatedFile: string, replaceRules: { regex: RegExp; 
                 mutableLine = mutableLine.replace(rule.regex, rule.to)
             }
 
-            const writeOk = wstream.write(mutableLine + '\n')
+            const writeOk = wstream.write(`${mutableLine}\n`)
 
             if (!writeOk) {
                 await once(wstream, 'drain')
@@ -251,22 +247,22 @@ async function fileMapper(generatedFile: string, replaceRules: { regex: RegExp; 
             await finished(wstream)
 
             // nosemgrep: eslint.detect-non-literal-fs-filename
-            if (!isOk && existsSync(generatedFile + '.new')) {
-                await fsPromises.unlink(generatedFile + '.new') // nosemgrep: eslint.detect-non-literal-fs-filename
+            if (!isOk && existsSync(`${generatedFile}.new`)) {
+                await fsPromises.unlink(`${generatedFile}.new`) // nosemgrep: eslint.detect-non-literal-fs-filename
             }
         }
     }
 
     try {
-        await fsPromises.rename(generatedFile + '.new', generatedFile) // nosemgrep: eslint.detect-non-literal-fs-filename
+        await fsPromises.rename(`${generatedFile}.new`, generatedFile) // nosemgrep: eslint.detect-non-literal-fs-filename
         logger.log('Update successful!')
     } catch (err) {
         // nosemgrep: eslint.detect-non-literal-fs-filename
-        if (existsSync(generatedFile + '.new')) {
-            await fsPromises.unlink(generatedFile + '.new') // nosemgrep: eslint.detect-non-literal-fs-filename
+        if (existsSync(`${generatedFile}.new`)) {
+            await fsPromises.unlink(`${generatedFile}.new`) // nosemgrep: eslint.detect-non-literal-fs-filename
         }
 
-        logger.log(`Final swap failed: ${err}`)
+        logger.log(`Final swap failed: ${err instanceof Error ? err.message : String(err)}`)
         throw err
     }
 }

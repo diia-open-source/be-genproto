@@ -1,4 +1,3 @@
-/* eslint-disable security/detect-non-literal-fs-filename */
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
@@ -209,7 +208,7 @@ describe('TsCommandBuilder', () => {
                 // nosemgrep: eslint.detect-non-literal-fs-filename
                 const result = await fs.readFile(path.join(outputDir, `reserved-${word}.ts`), 'utf8')
 
-                expect(result, `reserved word "${word}" should be stripped`).not.toContain(`export type ${word} =`)
+                expect(result).not.toContain(`export type ${word} =`)
                 expect(result).toContain('export type safe = typeof Test.safe;')
             }
         })

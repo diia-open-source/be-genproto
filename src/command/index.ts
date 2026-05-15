@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { glob } from 'glob'
 
-import Logger from '../logger'
+import Logger from '../logger.js'
 
 export enum Platform {
     ts = 'ts',
@@ -25,7 +25,7 @@ export abstract class CommandBuilder {
         const protoFiles = await glob(`${this.rootDir}/**/*.proto`, { ignore: '**/node_modules/**' })
 
         if (protoFiles.length > 0) {
-            iPath += ' ' + protoFiles.join(' ')
+            iPath += ` ${protoFiles.join(' ')}`
         }
 
         return iPath.trim()
@@ -61,7 +61,6 @@ export abstract class CommandBuilder {
                 return acc
             }
 
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
             const contents = fs.readFileSync(value) // nosemgrep: eslint.detect-non-literal-fs-filename
             if (!contents.includes('package ua.gov.diia')) {
                 return acc

@@ -6,7 +6,7 @@ export default class Logger {
     }
 
     log(...message: string[]): void {
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line eslint/no-console
         console.log(...message)
     }
 
@@ -15,7 +15,7 @@ export default class Logger {
             return
         }
 
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line eslint/no-console
         console.log(...message)
     }
 }

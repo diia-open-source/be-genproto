@@ -1,4 +1,4 @@
-import { CommandBuilder } from './index'
+import { CommandBuilder } from './index.js'
 
 export default class JavaCommandBuilder extends CommandBuilder {
     async protocCommand(): Promise<string[]> {
