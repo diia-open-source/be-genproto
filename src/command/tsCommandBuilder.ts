@@ -126,6 +126,11 @@ export default class TsCommandBuilder extends CommandBuilder {
                 dependenciesPattern = 'node_modules/@diia-inhouse/**/proto/**/*.proto'
                 break
             }
+            default: {
+                const unhandledPlatform: never = projectPlatform
+
+                throw new Error(`Unexpected platform: ${String(unhandledPlatform)}`)
+            }
         }
 
         const pluginLocation = await this.getProtoTsPluginLocation()
