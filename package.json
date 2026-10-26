@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "4.0.25",
+    "version": "4.0.26",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "license": "SEE LICENSE IN LICENSE.md",
     "author": "diia-team",
@@ -39,7 +39,7 @@
         "yargs": "18.0.0"
     },
     "devDependencies": {
-        "@diia-inhouse/configs": "7.2.2",
+        "@diia-inhouse/configs": "7.2.3",
         "@diia-inhouse/oxc-config": "5.0.2",
         "@types/lodash": "4.17.24",
         "@types/node": "25.6.2",
