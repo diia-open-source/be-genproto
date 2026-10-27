@@ -1,6 +1,6 @@
 {
     "name": "@diia-inhouse/genproto",
-    "version": "4.0.26",
+    "version": "4.0.27",
     "description": "JS codegen from proto with imports from @diia-inhouse/types",
     "license": "SEE LICENSE IN LICENSE.md",
     "author": "diia-team",
@@ -29,8 +29,7 @@
         "lint-fix": "oxlint --fix && oxfmt .",
         "lint:lockfile": "lockfile-lint --path package-lock.json --allowed-hosts registry.npmjs.org --validate-https",
         "prepare": "npm run build",
-        "test": "tsc --project tests/tsconfig.json && vitest run",
-        "find-circulars": "madge --circular --extensions ts ./"
+        "test": "tsc --project tests/tsconfig.json && vitest run"
     },
     "dependencies": {
         "glob": "13.0.6",
@@ -40,13 +39,12 @@
     },
     "devDependencies": {
         "@diia-inhouse/configs": "7.2.3",
-        "@diia-inhouse/oxc-config": "5.0.2",
+        "@diia-inhouse/oxc-config": "6.1.1",
         "@types/lodash": "4.17.24",
         "@types/node": "25.6.2",
         "@types/yargs": "17.0.35",
         "@vitest/coverage-v8": "4.1.11",
         "lockfile-lint": "5.0.0",
-        "madge": "8.0.0",
         "oxfmt": "0.72.0",
         "oxlint": "1.87.0",
         "oxlint-tsgolint": "7.0.2003",
@@ -66,8 +64,5 @@
     },
     "engines": {
         "node": ">=24"
-    },
-    "madge": {
-        "tsConfig": "./tsconfig.json"
     }
 }
